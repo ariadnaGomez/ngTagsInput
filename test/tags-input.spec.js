@@ -482,6 +482,49 @@ describe('tags-input directive', function() {
         });
     });
 
+    describe('close-after-tag-added option', function() {
+
+        it('initializes the option to false', function() {
+            // Arrange/Act
+            compile();
+
+            // Assert
+            expect(isolateScope.options.closeAfterTagAdded).toBeFalsy();
+        });
+
+        it('does not set focus on the input field after a tag is added when close-after-tag-added is true', function() {
+            // Arrange
+            compile('close-after-tag-added="true"');
+
+            var input = getInput()[0];
+            spyOn(input, 'focus');
+
+            // Act
+            newTag('foo');
+            $timeout.flush();
+
+            // Assert
+            expect(input.focus).not.toHaveBeenCalled();
+        });
+
+        it('does not set focus on the input field after a tag is removed when close-after-tag-added is true', function() {
+            // Arrange
+            $scope.tags = generateTags(3);
+            compile('close-after-tag-added="true"');
+
+            var input = getInput()[0];
+            spyOn(input, 'focus');
+
+            // Act
+            getRemoveButton(1).click();
+            $timeout.flush();
+
+            // Assert
+            expect(input.focus).not.toHaveBeenCalled();
+        });
+
+    });
+
     describe('add-on-enter option', function() {
         it('adds a new tag when the enter key is pressed and the option is true', function() {
             // Arrange

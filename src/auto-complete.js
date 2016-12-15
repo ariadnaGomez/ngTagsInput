@@ -199,6 +199,9 @@ tagsInput.directive('autoComplete', function($document, $timeout, $sce, $q, tags
                     suggestionList.reset();
                     added = true;
                 }
+                if (options.tagsInput.closeAfterTagAdded) {
+                    events.trigger('close-autocomplete');
+                }
                 return added;
             };
 
@@ -220,7 +223,10 @@ tagsInput.directive('autoComplete', function($document, $timeout, $sce, $q, tags
                 })
                 .on('input-change', function(value) {
                     if (shouldLoadSuggestions(value)) {
-                        suggestionList.load(value, tagsInput.getTags());
+                        if (angular.isDefined(value) && value !== null && value !== '' ||
+                            !options.tagsInput.closeAfterTagAdded) {
+                            suggestionList.load(value, tagsInput.getTags());
+                        }
                     }
                     else {
                         suggestionList.reset();
