@@ -31,6 +31,7 @@
  * @param {boolean=} [addOnComma=true] Flag indicating that a new tag will be added on pressing the COMMA key.
  * @param {boolean=} [addOnBlur=true] Flag indicating that a new tag will be added when the input field loses focus.
  * @param {boolean=} [addOnPaste=false] Flag indicating that the text pasted into the input field will be split into tags.
+ * @param {boolean=} [closeAfterTagAdded=false] Flag indicating that the input will not be focus after a tag is added.
  * @param {string=} [pasteSplitPattern=,] Regular expression used to split the pasted text into tags.
  * @param {boolean=} [replaceSpacesWithDashes=true] Flag indicating that spaces will be replaced with dashes.
  * @param {string=} [allowedTagsPattern=.+] Regular expression that determines whether a new tag is valid.
@@ -203,7 +204,8 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, $q, tags
                 keyProperty: [String, ''],
                 allowLeftoverText: [Boolean, false],
                 addFromAutocompleteOnly: [Boolean, false],
-                spellcheck: [Boolean, true]
+                spellcheck: [Boolean, true],
+                closeAfterTagAdded: [Boolean, false]
             });
 
             $scope.tagList = new TagList($scope.options, $scope.events,
@@ -258,7 +260,8 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, $q, tags
                 input = element.find('input'),
                 validationOptions = ['minTags', 'maxTags', 'allowLeftoverText'],
                 setElementValidity,
-                focusInput;
+                focusInput,
+                blurInput;
 
             setElementValidity = function() {
                 ngModelCtrl.$setValidity('maxTags', tagList.items.length <= options.maxTags);
@@ -268,6 +271,11 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, $q, tags
 
             focusInput = function() {
                 $timeout(function() { input[0].focus(); });
+            };
+
+            blurInput = function() {
+                scope.hasFocus = false;
+                $timeout(function() { input[0].blur(); });
             };
 
             ngModelCtrl.$isEmpty = function(value) {
@@ -359,7 +367,9 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, $q, tags
                         if (scope.disabled) {
                             return;
                         }
-                        focusInput();
+                        if (!options.closeAfterTagAdded) {
+                            focusInput();
+                        }
                     }
                 },
                 tag: {
@@ -383,7 +393,11 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, $q, tags
                     // automatically, but since the model is an array, $setViewValue does nothing and it's up to us to do it.
                     // Unfortunately this won't trigger any registered $parser and there's no safe way to do it.
                     ngModelCtrl.$setDirty();
-                    focusInput();
+                    if (options.closeAfterTagAdded) {
+                        blurInput();
+                    } else {
+                        focusInput();
+                    }
                 })
                 .on('invalid-tag', function() {
                     scope.newTag.invalid = true;
@@ -407,6 +421,9 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, $q, tags
                     }
                     element.triggerHandler('blur');
                     setElementValidity();
+                })
+                .on('close-autocomplete', function() {
+                    blurInput();
                 })
                 .on('input-keydown', function(event) {
                     var key = event.keyCode,
